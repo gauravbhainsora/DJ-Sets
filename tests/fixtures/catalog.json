@@ -1,0 +1,82 @@
+[
+  {
+    "id": "fixture:house-original",
+    "title": "Fixture groove",
+    "artists": [
+      "Test artist"
+    ],
+    "version": "Original Mix",
+    "genre": "House",
+    "bpm": 124,
+    "key": "A Minor",
+    "durationSeconds": 363,
+    "sourceUrl": "https://example.com/house-original",
+    "metadataSource": "Illustrative browser-test fixture; not verified music metadata.",
+    "verifiedOn": null,
+    "energyEstimate": null
+  },
+  {
+    "id": "fixture:house-remix",
+    "title": "Fixture groove",
+    "artists": [
+      "Test artist"
+    ],
+    "version": "Test Remix",
+    "genre": "House",
+    "bpm": null,
+    "key": null,
+    "durationSeconds": null,
+    "sourceUrl": "https://example.com/house-remix",
+    "metadataSource": "Illustrative browser-test fixture; not verified music metadata.",
+    "verifiedOn": null,
+    "energyEstimate": null
+  },
+  {
+    "id": "fixture:melodic",
+    "title": "Fixture atmosphere",
+    "artists": [
+      "Test artist"
+    ],
+    "version": "Extended Mix",
+    "genre": "Melodic House & Techno",
+    "bpm": 122,
+    "key": "D Minor",
+    "durationSeconds": 404,
+    "sourceUrl": "https://example.com/melodic",
+    "metadataSource": "Illustrative browser-test fixture; not verified music metadata.",
+    "verifiedOn": null,
+    "energyEstimate": null
+  },
+  {
+    "id": "fixture:progressive",
+    "title": "Fixture journey",
+    "artists": [
+      "Test artist"
+    ],
+    "version": "Extended Mix",
+    "genre": "Progressive House",
+    "bpm": 120,
+    "key": "G Major",
+    "durationSeconds": 482,
+    "sourceUrl": "https://example.com/progressive",
+    "metadataSource": "Illustrative browser-test fixture; not verified music metadata.",
+    "verifiedOn": null,
+    "energyEstimate": null
+  },
+  {
+    "id": "fixture:pop",
+    "title": "Fixture chorus",
+    "artists": [
+      "Test artist"
+    ],
+    "version": "Extended Mix",
+    "genre": "Dance / Pop",
+    "bpm": 128,
+    "key": "F Minor",
+    "durationSeconds": 199,
+    "sourceUrl": "https://example.com/pop",
+    "metadataSource": "Illustrative browser-test fixture; not verified music metadata.",
+    "verifiedOn": null,
+    "energyEstimate": null
+  }
+]
