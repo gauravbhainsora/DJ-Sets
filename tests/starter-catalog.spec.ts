@@ -1,3 +1,4 @@
+import { selectGenre } from './ui';
 import { expect, test } from '@playwright/test';
 
 // This exercises the real bundled data through the UI. It does not replace
@@ -15,12 +16,12 @@ test('the bundled starter catalog produces a real starting selection in every ge
     { genre: 'Dance / Pop', title: 'D.A.N.C.E.', source: 'https://www.beatport.com/track/dance/20599776' },
     { genre: 'Melodic House & Techno', title: 'Orpheon', source: 'https://www.beatport.com/track/orpheon/22764891' },
   ]) {
-    await page.getByRole('radio', { name: genre, exact: true }).check();
+    await selectGenre(page, genre);
     await page.getByRole('button', { name: 'Generate set plan', exact: true }).click();
     const tracklist = page.getByRole('table', { name: 'Tracklist' });
     await expect(tracklist.getByRole('row')).toHaveCount(4);
     await expect(tracklist.getByRole('row').filter({ hasText: title }).getByRole('link')).toHaveAttribute('href', source);
-    await expect(tracklist.getByRole('cell', { name: 'Unknown', exact: true })).toHaveCount(3);
+    await expect(tracklist.getByText('Unknown', { exact: true })).toHaveCount(3);
     await expect(page.getByRole('status')).toContainText('short starting selection');
   }
 

@@ -7,6 +7,21 @@ export const GENRES = [
 
 export type Genre = (typeof GENRES)[number];
 
+export interface EnergyEstimate {
+  readonly value: number;
+  readonly basis: string;
+  readonly confidence: 'low' | 'medium' | 'high';
+  readonly kind: 'curated' | 'user';
+}
+
+export function isEnergyEstimate(value: unknown): value is EnergyEstimate {
+  if (typeof value !== 'object' || value === null) return false;
+  const item = value as Record<string, unknown>;
+  return typeof item.value === 'number' && Number.isFinite(item.value) && item.value >= 1 && item.value <= 10
+    && isText(item.basis) && ['low', 'medium', 'high'].includes(String(item.confidence))
+    && ['curated', 'user'].includes(String(item.kind));
+}
+
 export interface Recording {
   readonly id: string;
   readonly title: string;
@@ -19,7 +34,7 @@ export interface Recording {
   readonly sourceUrl: string;
   readonly metadataSource: string;
   readonly verifiedOn: string | null;
-  readonly energyEstimate: null;
+  readonly energyEstimate: EnergyEstimate | null;
 }
 
 function isText(value: unknown): value is string {
@@ -40,7 +55,7 @@ function isSourceUrl(value: unknown): value is string {
   }
 }
 
-function isRecording(value: unknown): value is Recording {
+export function isRecording(value: unknown): value is Recording {
   if (typeof value !== 'object' || value === null) return false;
   const record = value as Record<string, unknown>;
   return isText(record.id)
@@ -54,8 +69,7 @@ function isRecording(value: unknown): value is Recording {
     && isSourceUrl(record.sourceUrl)
     && isText(record.metadataSource)
     && (record.verifiedOn === null || (isText(record.verifiedOn) && /^\d{4}-\d{2}-\d{2}$/.test(record.verifiedOn)))
-    // Supported estimates and their evidence will be introduced together.
-    && record.energyEstimate === null;
+    && (record.energyEstimate === null || isEnergyEstimate(record.energyEstimate));
 }
 
 export async function loadCatalog(): Promise<readonly Recording[]> {

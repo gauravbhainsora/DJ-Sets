@@ -1,10 +1,11 @@
+import { selectGenre } from './ui';
 import { expect, test } from '@playwright/test';
 import fixtureCatalog from './fixtures/catalog.json' with { type: 'json' };
 
 test('a DJ generates and reviews exact recording versions with honest metadata', async ({ page }) => {
   await page.route('**/catalog.json', route => route.fulfill({ json: fixtureCatalog }));
   await page.goto('/');
-  await page.getByRole('radio', { name: 'House', exact: true }).check();
+  await selectGenre(page, 'House');
   await page.getByRole('button', { name: 'Generate set plan', exact: true }).click();
 
   const tracklist = page.getByRole('table', { name: 'Tracklist' });
@@ -17,7 +18,7 @@ test('a DJ generates and reviews exact recording versions with honest metadata',
   await expect(original).toContainText('6:03');
   await expect(original.getByRole('link', { name: /source/i })).toHaveAttribute('href', 'https://example.com/house-original');
   const remix = tracklist.getByRole('row').filter({ hasText: 'Test Remix' });
-  await expect(remix.getByRole('cell', { name: 'Unknown', exact: true })).toHaveCount(4);
+  await expect(remix.getByText('Unknown', { exact: true })).toHaveCount(4);
   await expect(remix.getByRole('link', { name: /source/i })).toHaveAttribute('href', 'https://example.com/house-remix');
   await expect(page.getByText(/discovery is limited to this starter catalog/i)).toBeVisible();
   await expect(page.getByRole('status')).toContainText('2 tracks');
@@ -32,7 +33,7 @@ test('a genre with no candidates explains the empty result and lets the DJ choos
   await expect(page.getByRole('status')).toContainText('Choose another genre');
   await expect(page.getByRole('table', { name: 'Tracklist' })).toBeHidden();
 
-  await page.getByRole('radio', { name: 'House', exact: true }).check();
+  await selectGenre(page, 'House');
   await page.getByRole('button', { name: 'Generate set plan', exact: true }).click();
   await expect(page.getByRole('table', { name: 'Tracklist' }).getByRole('row')).toHaveCount(3);
   await expect(page.getByRole('status')).not.toContainText('No recordings');
@@ -57,7 +58,7 @@ test('the DJ can generate each confirmed genre without mixing or relabeling an e
     { genre: 'Progressive House', title: 'Fixture journey', rows: 2 },
     { genre: 'Dance / Pop', title: 'Fixture chorus', rows: 2 },
   ]) {
-    await page.getByRole('radio', { name: genre, exact: true }).check();
+    await selectGenre(page, genre);
     await page.getByRole('button', { name: 'Generate set plan', exact: true }).click();
     await expect(page.getByRole('heading', { name: `${genre} set plan`, exact: true })).toBeVisible();
     const tracklist = page.getByRole('table', { name: 'Tracklist' });
@@ -65,7 +66,7 @@ test('the DJ can generate each confirmed genre without mixing or relabeling an e
     await expect(tracklist).toContainText(title);
     await expect(tracklist.getByRole('row').nth(1).getByRole('cell').first()).toHaveText('01');
   }
-  await page.getByRole('radio', { name: 'House', exact: true }).check();
+  await selectGenre(page, 'House');
   await expect(page.getByRole('heading', { name: 'Dance / Pop set plan', exact: true })).toBeVisible();
   await expect(page.getByRole('table', { name: 'Tracklist' })).toContainText('Fixture chorus');
 });
