@@ -1,8 +1,8 @@
 import { GENRES, loadCatalog, type Genre, type Recording, type EnergyEstimate } from './catalog';
-import { arcError, defaultArc, phaseIndex, targetEnergy, type Phase } from './energy-arc';
+import { arcError, curvePoints, defaultArc, type Phase } from './energy-arc';
 import { constraintNotes, createSetPlan, elapsedTimes, energyFor, formatTime, guidance, moveTrack, replaceTrack, timingError, totalSeconds, type SetPlan, type TrackPlacement } from './set-plan';
 import './style.css';
-import { downloadFile, readSavedPlans, savePlan, validateBundle, type PlanBundle } from './persistence';
+import { downloadFile, MAX_BACKUP_BYTES, readSavedPlans, savePlan, validateBundle, type PlanBundle } from './persistence';
 import { csvForPlan, localPlaylist, textForPlan } from './exports';
 import { localFilePath, matchRecording, parseLibrary } from './local-library';
 
@@ -131,11 +131,7 @@ function renderArc(): void {
   }
   arc.forEach((phase, index) => {
     const start = arc[index - 1]?.endSeconds ?? 0;
-    const placementsInPhase = plan ? elapsedTimes(plan).filter(time => phaseIndex(arc, time) === index && time < phase.endSeconds) : [];
-    const samples = placementsInPhase.length > 1 ? placementsInPhase : Array.from({ length: Math.max(2, Math.floor((phase.endSeconds - start) / 210)) }, (_, i) => start + i * 210).filter(time => time < phase.endSeconds);
-    const points = index === 2
-      ? [point(start, phase.startEnergy), ...samples.map((time, i) => point(time, targetEnergy(arc, time, i))), point(phase.endSeconds, phase.endEnergy)]
-      : index === 4 ? [point(start, phase.startEnergy), point(start + (phase.endSeconds - start) * .7, phase.startEnergy), point(phase.endSeconds, phase.endEnergy)] : [point(start, phase.startEnergy), point(phase.endSeconds, phase.endEnergy)];
+    const points = curvePoints(arc, index, plan ? elapsedTimes(plan) : []).map(([time, energy]) => point(time, energy));
     node('polyline', { points: points.join(' '), fill: 'none', stroke: '#c8b5f6', 'stroke-width': '2' });
     const center = String(20 + (start + phase.endSeconds) / 2 / duration * 760);
     node('text', { x: center, y: '220', fill: '#c3b5d6', 'font-size': '10', 'text-anchor': 'middle' }, index === 4 ? 'Climax + landing' : phase.name);
@@ -368,7 +364,7 @@ function renderPlan(currentPlan: SetPlan): void {
   const constraintPanel = document.querySelector<HTMLElement>('#constraint-notes')!;
   constraintPanel.replaceChildren(...constraints.map(note => { const paragraph = document.createElement('p'); paragraph.textContent = note; return paragraph; }));
   constraintPanel.hidden = !constraints.length;
-  if (constraints.length) planStatus.textContent += ' Unresolved constraints or required-track compromises need your review.';
+  if (constraints.length) planStatus.textContent += ' Planning limits or unresolved constraints need your review.';
   document.querySelector<HTMLElement>('#estimated-duration')!.textContent = formatTime(total);
   document.querySelector<HTMLElement>('#target-difference')!.textContent = `${formatTime(Math.abs(difference))} ${difference >= 0 ? 'short' : 'over'}`;
   document.querySelector<HTMLElement>('#timing-summary')!.hidden = isEmpty;
@@ -462,7 +458,7 @@ document.querySelector<HTMLInputElement>('#import-backup')!.addEventListener('ch
   const input = event.target as HTMLInputElement;
   try {
     const file = input.files?.[0]; if (!file) return;
-    if (file.size > 2_000_000) throw new Error('Backup exceeds the 2 MB limit. Existing work was preserved.');
+    if (file.size > MAX_BACKUP_BYTES) throw new Error('Backup exceeds the 50 MB limit. Existing work was preserved.');
     const bundle = validateBundle(JSON.parse(await file.text()));
     savePlan(bundle); openBundle(bundle); refreshSavedPlans();
   } catch (error) { showError(`Import failed: ${(error as Error).message}`); }

@@ -30,7 +30,7 @@ export interface SetPlan extends PlanSettings {
 }
 
 // A recording keeps its identity across plans; a placement belongs to one plan.
-// This first slice uses catalog order. Musical sequencing comes in later slices.
+// Placement starts include incoming overlap, so selection and review share a timeline.
 export function createSetPlan(catalog: readonly Recording[], settings: PlanSettings, energyCorrections: SetPlan['energyCorrections'] = {}, previousPlan?: SetPlan | null): SetPlan {
   const { genres, targetSeconds, arc, context, emphasis } = settings;
   const placements: TrackPlacement[] = [];
@@ -41,10 +41,17 @@ export function createSetPlan(catalog: readonly Recording[], settings: PlanSetti
   const genreCounts: Partial<Record<Genre, number>> = {};
   const phaseCounts = [0, 0, 0, 0, 0];
   while (candidates.length && (total < targetSeconds || placements.length < highestPin || candidates.some(recording => required.has(recording.id)))) {
-    const phase = phaseIndex(arc, total);
-    const desired = targetEnergy(arc, total, phaseCounts[phase]!);
     const previousRecording = catalog.find(item => item.id === placements.at(-1)?.recordingId);
+    const timingFor = (recording: Recording) => {
+      const oldPlacement = previousPlan?.placements.find(placement => placement.recordingId === recording.id);
+      const playSeconds = Math.min(oldPlacement?.playSeconds ?? 240, recording.durationSeconds ?? 240);
+      const previous = placements.at(-1);
+      const overlapSeconds = previous ? Math.min(oldPlacement?.overlapSeconds ?? 30, Math.floor(playSeconds / 3), Math.floor(previous.playSeconds / 3)) : 0;
+      return { oldPlacement, playSeconds, overlapSeconds, start: total - overlapSeconds };
+    };
     const score = (recording: Recording): number => {
+      const phase = phaseIndex(arc, timingFor(recording).start);
+      const desired = targetEnergy(arc, timingFor(recording).start, phaseCounts[phase]!);
       const energy = energyCorrections[recording.id] !== undefined ? energyCorrections[recording.id] : recording.energyEstimate;
       return (energy ? Math.abs(energy.value - desired) * 6 : 40)
         - (required.has(recording.id) ? 10000 : 0)
@@ -55,13 +62,10 @@ export function createSetPlan(catalog: readonly Recording[], settings: PlanSetti
     };
     candidates.sort((a, b) => score(a) - score(b));
     const recording = candidates.shift()!;
-    const oldPlacement = previousPlan?.placements.find(placement => placement.recordingId === recording.id);
-    const playSeconds = Math.min(oldPlacement?.playSeconds ?? 240, recording.durationSeconds ?? 240);
-    const previous = placements.at(-1);
-    const overlapSeconds = previous ? Math.min(oldPlacement?.overlapSeconds ?? 30, Math.floor(playSeconds / 3), Math.floor(previous.playSeconds / 3)) : 0;
+    const { oldPlacement, playSeconds, overlapSeconds, start } = timingFor(recording);
     placements.push({ id: oldPlacement?.id ?? crypto.randomUUID(), recordingId: recording.id, playSeconds, overlapSeconds, locked: oldPlacement?.locked ?? false, pin: oldPlacement?.pin ?? null, annotation: oldPlacement?.annotation ?? '' });
     total += playSeconds - overlapSeconds;
-    phaseCounts[phase]!++;
+    phaseCounts[phaseIndex(arc, start)]!++;
     genreCounts[recording.genre] = (genreCounts[recording.genre] ?? 0) + 1;
   }
   return {
@@ -102,6 +106,13 @@ export function constraintNotes(plan: SetPlan, catalog: readonly Recording[]): s
     if (placement.pin !== index + 1) notes.push(`Unresolved position pin: track ${index + 1} requests position ${placement.pin}.`);
   }
   if (totalSeconds(plan) > plan.targetSeconds && (plan.mustInclude.length || plan.placements.some(placement => placement.locked || placement.pin !== null))) notes.push('Target duration exceeded while retaining required, locked, or pinned selections. Adjust play times or constraints.');
+  const totalWeight = plan.genres.reduce((total, genre) => total + (plan.emphasis[genre] ?? 1), 0);
+  for (const genre of plan.genres) {
+    const available = catalog.filter(recording => recording.genre === genre).length;
+    const included = plan.placements.filter(placement => catalog.find(recording => recording.id === placement.recordingId)!.genre === genre).length;
+    const preferredShare = (plan.emphasis[genre] ?? 1) / totalWeight;
+    if (!available || (included >= available && included + 1 < plan.placements.length * preferredShare)) notes.push(`Catalog limit: ${genre} has ${available} available recording${available === 1 ? '' : 's'} and is exhausted. Other available genres fill the remaining request. Emphasis is a preference, not a guaranteed quota.`);
+  }
   return notes;
 }
 

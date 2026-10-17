@@ -39,3 +39,19 @@ export function targetEnergy(arc: readonly Phase[], seconds: number, phaseTrackI
   if (index === 4) return progress < .7 ? phase.startEnergy : phase.startEnergy + (phase.endEnergy - phase.startEnergy) * ((progress - .7) / .3);
   return phase.startEnergy + (phase.endEnergy - phase.startEnergy) * progress;
 }
+
+// Rendering samples the same target policy used by generation and track guidance.
+// In an unfilled phase, nominal 3:30 slots illustrate its intended peak waves.
+export function curvePoints(arc: readonly Phase[], index: number, placementStarts: readonly number[] = []): readonly (readonly [number, number])[] {
+  const phase = arc[index]!;
+  const start = arc[index - 1]?.endSeconds ?? 0;
+  const duration = phase.endSeconds - start;
+  const starts = placementStarts.filter(time => time >= start && time < phase.endSeconds);
+  const slots = starts.length > 1 ? starts : Array.from({ length: Math.max(1, Math.ceil(duration / 210)) }, (_, i) => start + i * 210);
+  const times = [...new Set([...slots, ...Array.from({ length: 21 }, (_, i) => start + duration * i / 20)])].sort((a, b) => a - b);
+  return times.map(time => {
+    const sample = Math.min(time, phase.endSeconds - .000001);
+    const ordinal = slots.reduce((latest, slot, i) => slot <= sample ? i : latest, 0);
+    return [time, targetEnergy(arc, sample, ordinal)] as const;
+  });
+}

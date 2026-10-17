@@ -1,6 +1,6 @@
 # DJ Sets
 
-A personal DJ set planner that runs locally without an account. The implementation follows [specification #1](https://github.com/gauravbhainsora/DJ-Sets/issues/1) and its child tickets #2–#11. See [implementation and verification status](docs/implementation-status.md), including the outstanding real Rekordbox import check.
+A personal DJ set planner that runs locally without an account. The implementation follows [specification #1](https://github.com/gauravbhainsora/DJ-Sets/issues/1) and its child tickets #2–#11. See [implementation and verification status](docs/implementation-status.md), including a successful two-file playlist import into Rekordbox 7.2.19.
 
 Select any combination of Melodic House & Techno, House, Progressive House, and Dance / Pop. Set genre emphasis, performance context, duration, and an editable five-phase energy arc. Generate a proposal, then edit planned play times and overlaps, replace or reorder tracks, add notes, lock inclusion, or pin positions. Required selections survive softer preferences; conflicts and catalog shortages remain visible.
 

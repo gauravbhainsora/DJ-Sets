@@ -11,6 +11,7 @@ export interface PlanBundle {
 }
 
 const STORAGE_KEY = 'dj-sets.saved-plans.v1';
+export const MAX_BACKUP_BYTES = 50_000_000;
 const isObject = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null && !Array.isArray(value);
 const isText = (value: unknown): value is string => typeof value === 'string' && value.length <= 20000;
 

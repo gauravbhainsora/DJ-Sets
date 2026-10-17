@@ -24,6 +24,22 @@ test('the editable arc scales to duration and separates target energy from unsup
   await expect(row).toContainText('medium confidence');
 });
 
+test('generation evaluates the phase at the actual overlapped start time', async ({ page }) => {
+  const tracks = [6, 6, 6, 6, 10, 10, 10, 10].map((energy, index) => ({ ...fixture[0], id: `boundary:${index}`, title: `Boundary ${index}`, energyEstimate: { value: energy, basis: 'Illustrative fixture', confidence: 'medium', kind: 'curated' } }));
+  await page.route('**/catalog.json', route => route.fulfill({ json: tracks }));
+  await page.goto('/'); await selectGenre(page, 'House');
+  await page.getByLabel('Target duration (minutes)').fill('20'); await page.getByLabel('Target duration (minutes)').press('Tab');
+  await page.getByText('Edit energy arc', { exact: true }).click();
+  for (const [label, value] of [['End of Anchor (minutes)', '4'], ['Start target for Build', '10'], ['End target for Build', '10']]) {
+    await page.getByLabel(label!).fill(value!); await page.getByLabel(label!).press('Tab');
+  }
+  await page.getByRole('button', { name: 'Generate set plan', exact: true }).click();
+  const second = page.getByRole('table', { name: 'Tracklist' }).getByRole('row').nth(2);
+  await expect(second.getByRole('cell').nth(8)).toHaveText('3:30');
+  await expect(second.getByRole('cell').nth(6)).toContainText('6/10');
+  await expect(second).not.toContainText('Energy compromise');
+});
+
 test('supported estimates produce peak relief, a larger breather, and an intentional landing', async ({ page }) => {
   const ratings = [5, 6, 7, 8, 9, 10];
   const tracks = Array.from({ length: 72 }, (_, index) => ({ ...fixture[0], id: `rated:${index}`, title: `Rated ${index}`, bpm: 124, key: 'A Minor', energyEstimate: { value: ratings[index % 6], basis: 'Illustrative fixture rating', kind: 'curated', confidence: 'medium' } }));
