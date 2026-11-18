@@ -8,7 +8,7 @@ Track issues and specifications in GitHub Issues for `gauravbhainsora/DJ-Sets` u
 
 ### Triage labels
 
-Use the five default triage labels, including `ready-for-agent` for implementation-ready specifications. See `docs/agents/triage-labels.md`.
+Use the five default triage labels, including `ready-for-agent` for implementation-ready specifications. See `/Users/gaurav/Projects/home/docs/agents/triage-labels.md`.
 
 ### Domain docs
 
